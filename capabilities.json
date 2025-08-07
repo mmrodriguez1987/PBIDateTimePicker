@@ -1,0 +1,167 @@
+{
+  "dataRoles": [
+    {
+      "displayName": "Fields",
+      "name": "category",
+      "kind": "Grouping"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "for": {
+            "in": "category"
+          },
+          "dataReductionAlgorithm": {
+            "top": {}
+          }
+        }
+      }
+    }
+  ],
+  "objects": {
+    "dateSettings": {
+      "displayName": "Date Settings",
+      "properties": {
+        "defaultRange": {
+          "displayName": "Default Range",
+          "type": {
+            "enumeration": [
+              {
+                "displayName": "Custom",
+                "value": "custom"
+              },
+              {
+                "displayName": "Today",
+                "value": "today"
+              },
+              {
+                "displayName": "Yesterday",
+                "value": "yesterday"
+              },
+              {
+                "displayName": "Last 7 Days",
+                "value": "last7days"
+              },
+              {
+                "displayName": "Last 30 Days",
+                "value": "last30days"
+              },
+              {
+                "displayName": "This Month",
+                "value": "thismonth"
+              },
+              {
+                "displayName": "Last Month",
+                "value": "lastmonth"
+              },
+              {
+                "displayName": "Quarter to Date",
+                "value": "qtd"
+              },
+              {
+                "displayName": "Year to Date",
+                "value": "ytd"
+              },
+              {
+                "displayName": "Last Year",
+                "value": "lastyear"
+              }
+            ]
+          }
+        },
+        "defaultStartDate": {
+          "displayName": "Default Start Date",
+          "type": {
+            "text": true
+          }
+        },
+        "defaultEndDate": {
+          "displayName": "Default End Date",
+          "type": {
+            "text": true
+          }
+        },
+        "showTime": {
+          "displayName": "Show Time",
+          "type": {
+            "bool": true
+          }
+        },
+        "timeFormat": {
+          "displayName": "Time Format",
+          "type": {
+            "enumeration": [
+              {
+                "displayName": "12 Hour",
+                "value": "12hour"
+              },
+              {
+                "displayName": "24 Hour",
+                "value": "24hour"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "appearance": {
+      "displayName": "Appearance",
+      "properties": {
+        "backgroundColor": {
+          "displayName": "Background Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "textColor": {
+          "displayName": "Text Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "borderColor": {
+          "displayName": "Border Color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fontSize": {
+          "displayName": "Font Size",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    }
+  },
+  "privileges": [],
+  "supportsKeyboardFocus": true,
+  "supportsMultiVisualSelection": false,
+  "sorting": {
+    "default": {}
+  },
+  "drilldown": {
+    "roles": ["category"]
+  }
+}

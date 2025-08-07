@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "ES5",
+        "lib": ["ES5", "DOM"],
+        "sourceMap": true,
+        "outDir": "./.tmp/build/",
+        "skipLibCheck": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "esModuleInterop": true
+    },
+    "files": [
+        "src/visual.ts"
+    ]
+}
