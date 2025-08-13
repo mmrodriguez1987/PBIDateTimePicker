@@ -21,7 +21,7 @@
             "in": "category"
           },
           "dataReductionAlgorithm": {
-            "top": {}
+              "window": { "count": 30000 }
           }
         }
       }

@@ -102,7 +102,7 @@ class DateUtils {
      * @returns Parsed Date object
      */
     static parseDate(dateString: string): Date {
-        return new Date(dateString);
+    return new Date(dateString);
     }
 
     /**
@@ -115,12 +115,10 @@ class DateUtils {
         // Use the provided maxDate or current date as fallback
         const endDate = maxDate || new Date();
         const startDate = new Date(endDate);
-        
         if (range !== PredefinedRange.CUSTOM) {
             // Calculate start date by subtracting the specified number of days
             startDate.setDate(endDate.getDate() - range);
         }
-
         return { startDate, endDate };
     }
 
@@ -165,7 +163,7 @@ class DateUtils {
             console.log(`Date range found: ${this.formatDate(minDate)} to ${this.formatDate(maxDate)}`);
         }
 
-        return { minDate, maxDate };
+    return { minDate, maxDate };
     }
 }
 
@@ -208,7 +206,6 @@ class MessageService implements IMessageService {
     private showMessage(text: string, isError: boolean): void {
         this.messageDiv.textContent = text;
         this.messageDiv.style.display = "block";
-        
         if (isError) {
             this.messageDiv.style.background = "#fed9cc";
             this.messageDiv.style.border = "1px solid #d83b01";
@@ -218,7 +215,6 @@ class MessageService implements IMessageService {
             this.messageDiv.style.border = "1px solid #107c10";
             this.messageDiv.style.color = "#107c10";
         }
-
         setTimeout(() => {
             this.messageDiv.style.display = "none";
         }, 3000);
@@ -349,8 +345,8 @@ class FilterService implements IFilterService {
 
         // Use the exact queryName from the column metadata for proper targeting
         const target = {
-            table: this.dateColumn.queryName?.split('.')[0] || "Table",
-            column: this.dateColumn.queryName?.split('.')[1] || this.dateColumn.displayName || "Date"
+            table: this.dateColumn.queryName?.split(".")[0] || "Table",
+            column: this.dateColumn.queryName?.split(".")[1] || this.dateColumn.displayName || "Date"
         };
 
         return {
@@ -363,7 +359,7 @@ class FilterService implements IFilterService {
                     value: DateUtils.formatDate(dateRange.startDate) + "T00:00:00.000Z"
                 },
                 {
-                    operator: "LessThanOrEqual", 
+                    operator: "LessThanOrEqual",
                     value: DateUtils.formatDate(dateRange.endDate) + "T23:59:59.999Z"
                 }
             ]
@@ -379,9 +375,9 @@ class FilterService implements IFilterService {
         if (!this.dateColumn) return null;
 
         // For DirectQuery, we need to be very specific about the target
-        const queryName = this.dateColumn.queryName || this.dateColumn.displayName;
-        const tableName = queryName.includes('.') ? queryName.split('.')[0] : "Table";
-        const columnName = queryName.includes('.') ? queryName.split('.')[1] : queryName;
+    const queryName = this.dateColumn.queryName || this.dateColumn.displayName;
+    const tableName = queryName.includes(".") ? queryName.split(".")[0] : "Table";
+    const columnName = queryName.includes(".") ? queryName.split(".")[1] : queryName;
 
         // Create filter that works specifically with DirectQuery semantic models
         return {
@@ -397,7 +393,7 @@ class FilterService implements IFilterService {
                     value: this.formatDateForDirectQuery(dateRange.startDate, true)
                 },
                 {
-                    operator: "LessThanOrEqual", 
+                    operator: "LessThanOrEqual",
                     value: this.formatDateForDirectQuery(dateRange.endDate, false)
                 }
             ],
@@ -523,7 +519,7 @@ class PredefinedRangesComponent implements IUIComponent {
      * @param selectedRange - Currently selected range
      */
     private updateButtonStyles(container: HTMLElement, selectedRange: PredefinedRange): void {
-        const buttons = container.querySelectorAll('button');
+    const buttons = container.querySelectorAll("button");
         const ranges = [
             PredefinedRange.LATEST_7_DAYS,
             PredefinedRange.LATEST_30_DAYS,
@@ -718,6 +714,8 @@ export class DateTimePickerVisual {
      */
     constructor(options: any) {
         console.log("DateTimePicker Visual constructor called");
+        console.log("Host:", options.host);
+        console.log("Element:", options.element);
         this.host = options.host;
         this.target = options.element;
         this.initializeServices();
@@ -802,14 +800,14 @@ export class DateTimePickerVisual {
             padding-bottom: 8px;
             border-bottom: 1px solid #edebe9;
         `;
-        this.container.appendChild(title);
+    this.container.appendChild(title);
     }
 
     /**
      * Creates the field information display element
      */
     private createFieldInfo(): void {
-        this.fieldInfo = document.createElement("div");
+    this.fieldInfo = document.createElement("div");
         this.fieldInfo.style.cssText = `
             margin-bottom: 12px;
             padding: 6px 10px;
@@ -819,15 +817,15 @@ export class DateTimePickerVisual {
             font-size: 11px;
             color: #8a8886;
         `;
-        this.fieldInfo.textContent = "Add a date field to the Fields area";
-        this.container.appendChild(this.fieldInfo);
+    this.fieldInfo.textContent = "Add a date field to the Fields area";
+    this.container.appendChild(this.fieldInfo);
     }
 
     /**
      * Creates the action buttons (Apply Filter, Clear Filter)
      */
     private createActionButtons(): void {
-        const buttonContainer = document.createElement("div");
+    const buttonContainer = document.createElement("div");
         buttonContainer.style.cssText = `
             display: flex;
             gap: 6px;
@@ -835,8 +833,8 @@ export class DateTimePickerVisual {
         `;
 
         // Apply button
-        const applyButton = document.createElement("button");
-        applyButton.textContent = "Apply Filter";
+    const applyButton = document.createElement("button");
+    applyButton.textContent = "Apply Filter";
         applyButton.style.cssText = `
             flex: 1;
             padding: 8px 12px;
@@ -849,14 +847,14 @@ export class DateTimePickerVisual {
             cursor: pointer;
             transition: background-color 0.2s;
         `;
-        applyButton.onmouseover = () => applyButton.style.background = "#106ebe";
-        applyButton.onmouseout = () => applyButton.style.background = "#0078d4";
-        applyButton.onclick = () => this.applyFilter();
-        buttonContainer.appendChild(applyButton);
+    applyButton.onmouseover = () => applyButton.style.background = "#106ebe";
+    applyButton.onmouseout = () => applyButton.style.background = "#0078d4";
+    applyButton.onclick = () => this.applyFilter();
+    buttonContainer.appendChild(applyButton);
 
         // Clear button
-        const clearButton = document.createElement("button");
-        clearButton.textContent = "Show All Data";
+    const clearButton = document.createElement("button");
+    clearButton.textContent = "Show All Data";
         clearButton.style.cssText = `
             flex: 1;
             padding: 8px 12px;
@@ -869,12 +867,12 @@ export class DateTimePickerVisual {
             cursor: pointer;
             transition: background-color 0.2s;
         `;
-        clearButton.onmouseover = () => clearButton.style.background = "#6d6a67";
-        clearButton.onmouseout = () => clearButton.style.background = "#8a8886";
-        clearButton.onclick = () => this.clearFilter();
-        buttonContainer.appendChild(clearButton);
+    clearButton.onmouseover = () => clearButton.style.background = "#6d6a67";
+    clearButton.onmouseout = () => clearButton.style.background = "#8a8886";
+    clearButton.onclick = () => this.clearFilter();
+    buttonContainer.appendChild(clearButton);
 
-        this.container.appendChild(buttonContainer);
+    this.container.appendChild(buttonContainer);
     }
 
     /**
@@ -889,16 +887,16 @@ export class DateTimePickerVisual {
             display: none;
             transition: all 0.3s ease;
         `;
-        this.container.appendChild(this.messageDiv);
+    this.container.appendChild(this.messageDiv);
     }
 
     /**
      * Sets the initial state of the visual (defaults to last 7 days)
      */
     private initializeDefaultState(): void {
-        // Don't set default range here - wait for data to load
-        // The range will be set in updateDataColumnInfo after data is processed
-        console.log("Initial state setup - waiting for data to determine range");
+    // Don't set default range here - wait for data to load
+    // The range will be set in updateDataColumnInfo after data is processed
+    console.log("Initial state setup - waiting for data to determine range");
     }
 
     /**
@@ -953,7 +951,7 @@ export class DateTimePickerVisual {
             this.messageService.showError("Start date must be before end date");
             return;
         }
-
+        console.log(`Range selected: ${dateRange} from inputs`);
         this.filterService.applyFilter(dateRange);
     }
 
@@ -997,36 +995,40 @@ export class DateTimePickerVisual {
                     queryName: categoryData.source.queryName || "",
                 };
 
-                // Don't rely on dataView data for min/max as it's limited in DirectQuery
-                // Instead, set a reasonable default range that covers typical business data
-                console.log("DirectQuery detected - setting wide date range to allow full data access");
-                
-                // Set a wide range that should cover most business scenarios
-                const currentYear = new Date().getFullYear();
-                this.dateColumn.minDate = new Date(1900, 0, 1); // Start from 1900
-                this.dateColumn.maxDate = new Date(currentYear + 10, 11, 31); // Go to 10 years in future
+                // Detect min/max from actual data
+                let minDate = null;
+                let maxDate = null;
+                if (categoryData.values && categoryData.values.length > 0) {
+                    const minMax = DateUtils.findMinMaxDates(categoryData.values);
+                    minDate = minMax.minDate;
+                    maxDate = minMax.maxDate;
+                }
+                // Fallback if no valid dates found
+                if (!minDate) minDate = new Date(1900, 0, 1);
+                if (!maxDate) maxDate = new Date(new Date().getFullYear() + 10, 11, 31);
+                this.dateColumn.minDate = minDate;
+                this.dateColumn.maxDate = maxDate;
 
-                // Log the approach
-                console.log(`Setting wide date range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`);
-                console.log("This allows the slicer to work with the full dataset without dataView limitations");
+                // Log the detected range
+                console.log(`Detected date range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`);
 
-                // Update date input constraints with the full range
+                // Update date input constraints with the detected range
                 this.dateInputsComponent.update({ 
                     minDate: this.dateColumn.minDate, 
                     maxDate: this.dateColumn.maxDate 
                 });
 
-                // Initialize with last 7 days from current date (not limited dataView)
+                // Initialize with last 7 days from current date
                 setTimeout(() => {
                     this.handleRangeSelection(PredefinedRange.LATEST_7_DAYS);
-                    console.log("Initialized with last 7 days from current date to avoid dataView limitations");
+                    console.log("Initialized with last 7 days from current date");
                 }, 100);
 
                 // Update filter service
                 this.filterService.setDateColumn(this.dateColumn);
 
-                // Update UI to show that we're working with full data access
-                this.fieldInfo.textContent = `Connected to: ${this.dateColumn.displayName} (Full Data Access)`;
+                // Update UI to show the detected range
+                this.fieldInfo.textContent = `Connected to: ${this.dateColumn.displayName}`;
                 this.fieldInfo.textContent += ` - Range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`;
                 this.fieldInfo.style.background = "#dff6dd";
                 this.fieldInfo.style.borderColor = "#107c10";
