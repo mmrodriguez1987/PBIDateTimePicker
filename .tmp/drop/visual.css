@@ -1,0 +1,251 @@
+/* Power BI Date Slicer Visual Styles */
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+}
+.date-slicer-container {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+/* Date Range Display */
+.date-range-display {
+  background: linear-gradient(135deg, #0078d4, #106ebe);
+  color: white;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.date-range-display .range-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.date-range-display .range-type {
+  font-weight: 600;
+  font-size: 1.1em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.date-range-display .date-range {
+  font-size: 0.95em;
+  opacity: 0.95;
+  font-weight: 400;
+}
+/* Controls Section */
+.controls-section {
+  padding: 16px;
+  flex: 1;
+}
+.controls-section .control-group {
+  margin-bottom: 16px;
+}
+.controls-section .control-group:last-child {
+  margin-bottom: 0;
+}
+.controls-section .control-label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #2d3748;
+  font-size: 0.9em;
+}
+/* Form Controls */
+.range-selector,
+.custom-date-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 14px;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.range-selector:focus,
+.custom-date-input:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+.range-selector:hover,
+.custom-date-input:hover {
+  border-color: #cbd5e0;
+}
+/* Custom Date Inputs */
+.custom-dates-container {
+  display: none;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+.custom-dates-container.show {
+  display: block;
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.custom-date-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+@media (max-width: 300px) {
+  .custom-date-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+.custom-date-group {
+  flex: 1;
+}
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+.btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #0078d4, #106ebe);
+  color: white;
+}
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #106ebe, #005a9e);
+}
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #495057, #343a40);
+}
+/* Debug Panel */
+.debug-panel {
+  margin: 16px;
+  padding: 12px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+.debug-panel .debug-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #4a5568;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  text-transform: uppercase;
+  font-size: 0.8em;
+  letter-spacing: 0.5px;
+}
+.debug-panel .debug-content {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.debug-panel .debug-line {
+  margin-bottom: 2px;
+  padding: 3px 6px;
+  border-radius: 3px;
+}
+.debug-panel .debug-line:nth-child(even) {
+  background: rgba(0, 0, 0, 0.03);
+}
+.debug-panel .debug-line:hover {
+  background: rgba(0, 120, 212, 0.05);
+}
+/* Responsive Design */
+@media (max-width: 250px) {
+  .date-slicer-container .date-range-display {
+    padding: 12px;
+  }
+  .date-slicer-container .date-range-display .range-type {
+    font-size: 1em;
+  }
+  .date-slicer-container .date-range-display .date-range {
+    font-size: 0.85em;
+  }
+  .date-slicer-container .controls-section {
+    padding: 12px;
+  }
+  .date-slicer-container .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .date-slicer-container .action-buttons .btn {
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+}
+/* Accessibility improvements */
+.btn:focus {
+  outline: 2px solid #0078d4;
+  outline-offset: 2px;
+}
+.range-selector:focus,
+.custom-date-input:focus {
+  outline: none;
+  border-color: #0078d4;
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .date-slicer-container {
+    border: 2px solid;
+  }
+  .btn {
+    border: 2px solid;
+  }
+}
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/*# sourceMappingURL=https://localhost:8080/assets/visual.css.map*/

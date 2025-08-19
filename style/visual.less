@@ -1,180 +1,291 @@
-@backgroundColor: #ffffff;
-@textColor: #333333;
+/* Power BI Date Slicer Visual Styles */
 
-.visual-container {
-    padding: 15px;
-    background-color: @backgroundColor;
-    color: @textColor;
-    border: 1px solid #d1d1d1;
-    border-radius: 6px;
+/* Reset and base styles */
+* {
     box-sizing: border-box;
+}
 
-    .title {
-        margin: 0 0 12px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: #323130;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #edebe9;
-    }
+.date-slicer-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    background: #ffffff;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 
-    .field-info {
-        margin-bottom: 12px;
-        padding: 6px 10px;
-        background: #fff4ce;
-        border: 1px solid #ffb900;
-        border-radius: 3px;
-        font-size: 11px;
-        color: #8a8886;
-
-        &.ok {
-            background: #dff6dd;
-            border-color: #107c10;
-            color: #107c10;
-        }
-    }
-
-    .quick-select {
+/* Date Range Display */
+.date-range-display {
+    background: linear-gradient(135deg, #0078d4, #106ebe);
+    color: white;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    
+    .range-info {
         display: flex;
         flex-direction: column;
         gap: 4px;
-        margin-bottom: 12px;
+    }
+    
+    .range-type {
+        font-weight: 600;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .date-range {
+        font-size: 0.95em;
+        opacity: 0.95;
+        font-weight: 400;
+    }
+}
 
-        .label {
-            font-size: 11px;
-            font-weight: 600;
-            color: #323130;
-            margin-bottom: 6px;
-        }
-
-        .buttons {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-
-            button {
-                padding: 4px 8px;
-                border: 1px solid #605e5c;
-                background: #ffffff;
-                color: #323130;
-                border-radius: 2px;
-                font-size: 10px;
-                cursor: pointer;
-                flex: 1;
-                min-width: 60px;
-
-                &.active {
-                    border-color: #0078d4;
-                    background: #0078d4;
-                    color: #ffffff;
-                }
-            }
+/* Controls Section */
+.controls-section {
+    padding: 16px;
+    flex: 1;
+    
+    .control-group {
+        margin-bottom: 16px;
+        
+        &:last-child {
+            margin-bottom: 0;
         }
     }
+    
+    .control-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #2d3748;
+        font-size: 0.9em;
+    }
+}
 
-    .date-inputs {
-        display: flex;
+/* Form Controls */
+.range-selector,
+.custom-date-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #ffffff;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    
+    &:focus {
+        outline: none;
+        border-color: #0078d4;
+        box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+    }
+    
+    &:hover {
+        border-color: #cbd5e0;
+    }
+}
+
+/* Custom Date Inputs */
+.custom-dates-container {
+    display: none;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    
+    &.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.custom-date-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    
+    @media (max-width: 300px) {
         flex-direction: column;
         gap: 8px;
-
-        label {
-            display: block;
-            margin-bottom: 3px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #323130;
-        }
-
-        input[type="date"] {
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #605e5c;
-            border-radius: 2px;
-            font-size: 12px;
-            box-sizing: border-box;
-        }
     }
+}
 
-    .actions {
-        display: flex;
-        gap: 6px;
-        margin: 12px 0;
+.custom-date-group {
+    flex: 1;
+}
 
-        button {
-            flex: 1;
-            padding: 8px 12px;
-            color: white;
-            border: none;
-            border-radius: 2px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
 
-        .apply-button {
-            background-color: #0078d4;
-
-            &:hover {
-                background-color: #106ebe;
-            }
-        }
-
-        .clear-button {
-            background-color: #8a8886;
-
-            &:hover {
-                background-color: #6d6a67;
-            }
-        }
+.btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+    
+    &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+}
 
-    .message {
-        margin-top: 8px;
-        padding: 6px 10px;
-        border-radius: 3px;
+.btn-primary {
+    background: linear-gradient(135deg, #0078d4, #106ebe);
+    color: white;
+    
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #106ebe, #005a9e);
+    }
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    color: white;
+    
+    &:hover:not(:disabled) {
+        background: linear-gradient(135deg, #495057, #343a40);
+    }
+}
+
+/* Debug Panel */
+.debug-panel {
+    margin: 16px;
+    padding: 12px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e0;
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    
+    .debug-header {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #4a5568;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        text-transform: uppercase;
+        font-size: 0.8em;
+        letter-spacing: 0.5px;
+    }
+    
+    .debug-content {
         font-size: 11px;
-        display: none;
+        line-height: 1.4;
     }
-
-    /* Legacy or alternative styling hooks */
-    .apply-button,
-    .clear-button {
-        &.legacy {
-            .apply-button {
-                background-color: #0078d4;
-
-                &:hover {
-                    background-color: #106ebe;
-                }
-            }
-
-            .clear-button {
-                background-color: #8a8886;
-
-                &:hover {
-                    background-color: #6d6a67;
-                }
-            }
+    
+    .debug-line {
+        margin-bottom: 2px;
+        padding: 3px 6px;
+        border-radius: 3px;
+        
+        &:nth-child(even) {
+            background: rgba(0, 0, 0, 0.03);
+        }
+        
+        &:hover {
+            background: rgba(0, 120, 212, 0.05);
         }
     }
+}
 
-    /* Optional alt theme */
-    &.alt-theme {
-        .apply-button {
-            background-color: #0078d4;
-
-            &:hover {
-                background-color: #106ebe;
+/* Responsive Design */
+@media (max-width: 250px) {
+    .date-slicer-container {
+        .date-range-display {
+            padding: 12px;
+            
+            .range-type {
+                font-size: 1em;
+            }
+            
+            .date-range {
+                font-size: 0.85em;
             }
         }
-
-        .clear-button {
-            background-color: #000000;
-
-            &:hover {
-                background-color: #333333;
+        
+        .controls-section {
+            padding: 12px;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 8px;
+            
+            .btn {
+                font-size: 13px;
+                padding: 10px 12px;
             }
         }
+    }
+}
+
+/* Accessibility improvements */
+.btn:focus {
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+}
+
+.range-selector:focus,
+.custom-date-input:focus {
+    outline: none;
+    border-color: #0078d4;
+    box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .date-slicer-container {
+        border: 2px solid;
+    }
+    
+    .btn {
+        border: 2px solid;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

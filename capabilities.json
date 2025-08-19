@@ -1,45 +1,79 @@
 {
-  "dataRoles": [
-    { "name": "date", "displayName": "Date", "kind": "Grouping" }
-  ],
-  "dataViewMappings": [
-    {
-      "conditions": [ { "date": { "min": 1, "max": 1 } } ],
-      "categorical": {
-        "categories": {
-          "for": { "in": "date" },
-          "dataReductionAlgorithm": { "window": { "count": 30000 } }
+    "dataRoles": [
+        {
+            "displayName": "Category Data",
+            "name": "category",
+            "kind": "Grouping"
+        },
+        {
+            "displayName": "Measure Data",
+            "name": "measure",
+            "kind": "Measure"
         }
-      }
-    }
-  ],
-  "objects": {
-    "general": {
-      "properties": {
-        "filter": { "type": { "filter": true } }
-      }
+    ],
+    "objects": {
+        "dataPoint": {
+            "properties": {
+                "defaultColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "showAllDataPoints": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "fill": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fillRule": {
+                    "type": {
+                        "fill": {}
+                    }
+                },
+                 "fontSize": {
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        }
     },
-    "dateSettings": {
-      "displayName": "Date Settings",
-      "properties": {
-        "dateColumn": { "displayName": "Date Column (label only)", "type": { "text": true } },
-        "startDate":  { "displayName": "Default Start Date (YYYY-MM-DD)", "type": { "text": true } },
-        "endDate":    { "displayName": "Default End Date (YYYY-MM-DD)",   "type": { "text": true } }
-      }
-    },
-    "appearance": {
-      "displayName": "Appearance",
-      "properties": {
-        "showTitle":  { "displayName": "Show Title",  "type": { "bool": true } },
-        "titleText":  { "displayName": "Title Text",  "type": { "text": true } },
-        "titleColor": { "displayName": "Title Color", "type": { "fill": { "solid": { "color": true } } } }
-      }
-    }
-  },
-  "privileges": [],
-  "supportsKeyboardFocus": true,
-  "supportsMultiVisualSelection": false,
-  "suppressDefaultTitle": true,
-  "sorting": { "default": {} },
-  "drilldown": { "roles": ["date"] }
+    "dataViewMappings": [
+        {
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "category"
+                    },
+                    "dataReductionAlgorithm": {
+                        "top": {}
+                    }
+                },
+                "values": {
+                    "select": [
+                        {
+                            "bind": {
+                                "to": "measure"
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "privileges": []
 }

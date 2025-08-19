@@ -1,15 +1,22 @@
 {
-  "compilerOptions": {
-    "target": "ES5",
-    "lib": ["ES5", "DOM"],
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "outDir": "./.tmp/build/",
-    "sourceMap": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true
-  },
-  "files": [
-    "src/visual.ts"
-  ]
+    "compilerOptions": {
+        "allowJs": false,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "target": "es2022",
+        "sourceMap": true,
+        "outDir": "./.tmp/build/",
+        "moduleResolution": "node",
+        "declaration": true,
+        "lib": [
+            "es2022",
+            "dom"
+        ]
+    },
+    "include": [
+        "./src/**/*.ts"
+    ],
+    "files": [
+        "./src/visual.ts"
+    ]
 }
