@@ -1,15 +1,15 @@
 {
-    "compilerOptions": {
-        "target": "ES5",
-        "lib": ["ES5", "DOM"],
-        "sourceMap": true,
-        "outDir": "./.tmp/build/",
-        "skipLibCheck": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "esModuleInterop": true
-    },
-    "files": [
-        "src/visual.ts"
-    ]
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["ES5", "DOM"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./.tmp/build/",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true
+  },
+  "files": [
+    "src/visual.ts"
+  ]
 }

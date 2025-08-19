@@ -1,1055 +1,347 @@
 "use strict";
 
-/**
- * Represents a date range with start and end dates
- */
+import powerbi from "powerbi-visuals-api";
+import * as models from "powerbi-models";
+
+import IVisual = powerbi.extensibility.visual.IVisual;
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+
 interface IDateRange {
     startDate: Date;
     endDate: Date;
 }
-
-/**
- * Contains information about a date column from Power BI data
- */
 interface IDateColumnInfo {
-    displayName: string;
-    queryName: string;
-    minDate?: Date;
+    displayName: string; 
+    queryName: string; 
+    minDate?: Date; 
     maxDate?: Date;
 }
-
-/**
- * Service interface for handling Power BI filter operations
- */
-interface IFilterService {
-    applyFilter(dateRange: IDateRange): void;
-    clearFilter(): void;
-    setDateColumn(column: IDateColumnInfo | null): void;
+interface IFilterService { 
+    applyFilter(dateRange: IDateRange): void; 
+    clearFilter(): void; 
+    setDateColumn(column: IDateColumnInfo | null): void; 
+}
+interface IMessageService { 
+    showSuccess(message: string): void; 
+    showError(message: string): void; 
+}
+interface IUIComponent { 
+    render(container: HTMLElement): void; 
+    update(data?: any): void; 
 }
 
-/**
- * Interface for UI components that can be rendered and updated
- */
-interface IUIComponent {
-    render(container: HTMLElement): void;
-    update(data?: any): void;
-}
-
-/**
- * Service interface for displaying user messages
- */
-interface IMessageService {
-    showSuccess(message: string): void;
-    showError(message: string): void;
-}
-
-/**
- * Enumeration of predefined date ranges
- */
 enum PredefinedRange {
-    LATEST_7_DAYS = 7,
-    LATEST_30_DAYS = 30,
-    LATEST_90_DAYS = 90,
-    CUSTOM = 0
+    LATEST_7_DAYS = 7, 
+    LATEST_30_DAYS = 30, 
+    LATEST_90_DAYS = 90, 
+    CUSTOM = 0 
 }
 
-/**
- * Settings class for date-related configuration
- */
-export class DateSettingsSettings {
-    public dateColumn: string = "";
-    public startDate: string = "";
-    public endDate: string = "";
-}
-
-/**
- * Settings class for visual appearance configuration
- */
-export class AppearanceSettings {
-    public showTitle: boolean = true;
-    public titleText: string = "Date Range Filter";
-    public titleColor: string = "#000000";
-}
-
-/**
- * Main visual settings container
- */
-export class VisualSettings {
-    public dateSettings: DateSettingsSettings = new DateSettingsSettings();
-    public appearance: AppearanceSettings = new AppearanceSettings();
-}
-
-/**
- * Utility class for date operations and calculations
- * Implements Single Responsibility Principle
- */
 class DateUtils {
-    /**
-     * Formats a Date object to YYYY-MM-DD string for HTML date inputs
-     * @param date - The date to format
-     * @returns Formatted date string
-     */
     static formatDate(date: Date): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        return `${year}-${month}-${day}`;
+        if (!date) return "";
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
     }
-
-    /**
-     * Parses a date string into a Date object
-     * @param dateString - String representation of date
-     * @returns Parsed Date object
-     */
-    static parseDate(dateString: string): Date {
-    return new Date(dateString);
+    static parseDate(input: any): Date {
+        if (!input) return new Date(NaN);
+        if (input instanceof Date) return new Date(input.getFullYear(), input.getMonth(), input.getDate());
+        const s = String(input).trim();
+        const mIso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (mIso) return new Date(+mIso[1], +mIso[2] - 1, +mIso[3]);
+        const mSl = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (mSl) {
+            const a = +mSl[1], b = +mSl[2], y = +mSl[3];
+            const ddFirst = a > 12;
+            const d = ddFirst ? a : b;
+            const mo = ddFirst ? b : a;
+            return new Date(y, mo - 1, d);
+        }
+        const d = new Date(s);
+        if (isNaN(d.getTime())) return new Date(NaN);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate());
     }
-
-    /**
-     * Calculates date range based on predefined range type
-     * @param range - The predefined range type
-     * @param maxDate - Maximum date from data (defaults to current date)
-     * @returns Date range object with start and end dates
-     */
     static getDateRange(range: PredefinedRange, maxDate?: Date): IDateRange {
-        // Use the provided maxDate or current date as fallback
         const endDate = maxDate || new Date();
         const startDate = new Date(endDate);
-        if (range !== PredefinedRange.CUSTOM) {
-            // Calculate start date by subtracting the specified number of days
-            startDate.setDate(endDate.getDate() - range);
-        }
+        if (range !== PredefinedRange.CUSTOM) startDate.setDate(endDate.getDate() - range);
         return { startDate, endDate };
     }
-
-    /**
-     * Validates that start date is not after end date
-     * @param startDate - Start date to validate
-     * @param endDate - End date to validate
-     * @returns True if date range is valid
-     */
-    static isValidDateRange(startDate: Date, endDate: Date): boolean {
-        return startDate <= endDate;
-    }
-
-    /**
-     * Finds minimum and maximum dates from an array of date values
-     * Handles DirectQuery datasets with potentially large numbers of unique dates
-     * @param data - Array of date values (strings or Date objects)
-     * @returns Object containing min and max dates, or nulls if no valid dates found
-     */
-    static findMinMaxDates(data: any[]): { minDate: Date | null; maxDate: Date | null } {
-        if (!data || data.length === 0) {
-            console.warn("No data provided to findMinMaxDates");
-            return { minDate: null, maxDate: null };
+    static isValidDateRange(start: Date, end: Date): boolean { return start <= end; }
+    static findMinMaxDates(arr: any[]) {
+        if (!arr || !arr.length) return { minDate: null as Date | null, maxDate: null as Date | null };
+        let min: Date | null = null, max: Date | null = null;
+        for (const v of arr) {
+            const dt = DateUtils.parseDate(v);
+            if (!isNaN(dt.getTime())) { if (!min || dt < min) min = dt; if (!max || dt > max) max = dt; }
         }
-
-        let minDate: Date | null = null;
-        let maxDate: Date | null = null;
-        let validDateCount = 0;
-
-        // Process all data to find true min/max across entire dataset
-        data.forEach((item, index) => {
-            const date = new Date(item);
-            if (!isNaN(date.getTime())) {
-                validDateCount++;
-                if (!minDate || date < minDate) minDate = date;
-                if (!maxDate || date > maxDate) maxDate = date;
-            }
-        });
-
-        console.log(`Processed ${data.length} date values, found ${validDateCount} valid dates`);
-        if (minDate && maxDate) {
-            console.log(`Date range found: ${this.formatDate(minDate)} to ${this.formatDate(maxDate)}`);
-        }
-
-    return { minDate, maxDate };
+        return { minDate: min, maxDate: max };
     }
 }
 
-/**
- * Service for displaying user feedback messages
- * Implements Single Responsibility Principle
- */
 class MessageService implements IMessageService {
-    private messageDiv: HTMLDivElement;
-
-    /**
-     * Creates a new MessageService instance
-     * @param messageDiv - HTML element for displaying messages
-     */
-    constructor(messageDiv: HTMLDivElement) {
-        this.messageDiv = messageDiv;
-    }
-
-    /**
-     * Displays a success message to the user
-     * @param message - Success message text
-     */
-    showSuccess(message: string): void {
-        this.showMessage(message, false);
-    }
-
-    /**
-     * Displays an error message to the user
-     * @param message - Error message text
-     */
-    showError(message: string): void {
-        this.showMessage(message, true);
-    }
-
-    /**
-     * Internal method for showing messages with appropriate styling
-     * @param text - Message text to display
-     * @param isError - Whether this is an error message
-     */
-    private showMessage(text: string, isError: boolean): void {
+    constructor(private messageDiv: HTMLDivElement) { }
+    showSuccess(m: string) { this.show(m, false); }
+    showError(m: string) { this.show(m, true); }
+    private show(text: string, isError: boolean) {
         this.messageDiv.textContent = text;
         this.messageDiv.style.display = "block";
-        if (isError) {
-            this.messageDiv.style.background = "#fed9cc";
-            this.messageDiv.style.border = "1px solid #d83b01";
-            this.messageDiv.style.color = "#d83b01";
-        } else {
-            this.messageDiv.style.background = "#dff6dd";
-            this.messageDiv.style.border = "1px solid #107c10";
-            this.messageDiv.style.color = "#107c10";
-        }
-        setTimeout(() => {
-            this.messageDiv.style.display = "none";
-        }, 3000);
+        if (isError) { this.messageDiv.style.background = "#fed9cc"; this.messageDiv.style.border = "1px solid #d83b01"; this.messageDiv.style.color = "#d83b01"; }
+        else { this.messageDiv.style.background = "#dff6dd"; this.messageDiv.style.border = "1px solid #107c10"; this.messageDiv.style.color = "#107c10"; }
+        setTimeout(() => { this.messageDiv.style.display = "none"; }, 2500);
     }
 }
 
-/**
- * Service for handling Power BI filter operations
- * Implements Single Responsibility Principle
- */
 class FilterService implements IFilterService {
-    private host: any;
-    private dateColumn: IDateColumnInfo | null;
-    private messageService: IMessageService;
+    private dateColumn: IDateColumnInfo | null = null;
+    
+    constructor(private host: any, private messageService: IMessageService) { }
+    setDateColumn(column: IDateColumnInfo | null): void { this.dateColumn = column; }
 
-    /**
-     * Creates a new FilterService instance
-     * @param host - Power BI host object for filter operations
-     * @param messageService - Service for displaying user messages
-     */
-    constructor(host: any, messageService: IMessageService) {
-        this.host = host;
-        this.messageService = messageService;
-        this.dateColumn = null;
+    private getTargetFromQueryName(qn: string, displayName: string): { table: string, column: string } {
+        if (!qn) return { table: "Table", column: displayName || "Date" };
+        if (qn.indexOf(".") >= 0) { const parts = qn.split("."); return { table: parts[0], column: parts[1] || displayName || "Date" }; }
+        const m = qn.match(/^(.+)\[(.+)\]$/);
+        if (m) return { table: m[1], column: m[2] };
+        return { table: "Table", column: displayName || qn };
     }
 
-    /**
-     * Sets the date column to be used for filtering
-     * @param column - Date column information or null to clear
-     */
-    setDateColumn(column: IDateColumnInfo | null): void {
-        this.dateColumn = column;
+    private formatDateForDirectQuery(date: Date, isStart: boolean): string {
+        const y = date.getFullYear(); const m = String(date.getMonth() + 1).padStart(2, "0"); const d = String(date.getDate()).padStart(2, "0");
+        return isStart ? `${y}-${m}-${d}T00:00:00.000` : `${y}-${m}-${d}T23:59:59.999`;
     }
 
-    /**
-     * Applies a date range filter to Power BI
-     * @param dateRange - Date range to filter by
-     */
+    
+    private createAdvancedFilter(dateRange: IDateRange): models.AdvancedFilter | null {
+        if (!this.dateColumn) return null;
+        const targetObj = this.getTargetFromQueryName(this.dateColumn.queryName, this.dateColumn.displayName);
+        const target: models.IFilterTarget = { table: targetObj.table, column: targetObj.column };
+        const start = this.formatDateForDirectQuery(dateRange.startDate, true);
+        const end = this.formatDateForDirectQuery(dateRange.endDate, false);
+        const conditions: models.IAdvancedFilterCondition[] = [
+            { operator: "GreaterThanOrEqual", value: start },
+            { operator: "LessThanOrEqual", value: end }
+        ];
+        return new models.AdvancedFilter(target, "And", conditions);
+    }
     applyFilter(dateRange: IDateRange): void {
-        if (!this.dateColumn) {
-            this.messageService.showError("Unable to apply filter - add a date field");
-            return;
-        }
-
+        if (!this.dateColumn) { this.messageService.showError("Unable to apply filter - add a date field"); return; }
         try {
-            // For DirectQuery models, use the filter manager approach
             const filter = this.createAdvancedFilter(dateRange);
-            if (filter && this.host && this.host.createSelectionManager) {
-                // Use the selection manager for DirectQuery compatibility
-                const selectionManager = this.host.createSelectionManager();
-                
-                // Apply filter using the filter manager - more compatible with DirectQuery
-                if (this.host.filterManager && this.host.filterManager.applyFilter) {
-                    this.host.filterManager.applyFilter(filter);
-                    this.messageService.showSuccess("Filter applied successfully!");
-                } else if (this.host.applyJsonFilter) {
-                    // Fallback to JSON filter with proper parameters for DirectQuery
-                    this.host.applyJsonFilter(filter, "general", "filter", 2);
-                    this.messageService.showSuccess("Filter applied successfully!");
-                } else {
-                    this.messageService.showError("Filter API not available for this data source");
-                }
-            } else {
-                this.messageService.showError("Filter service not available");
-            }
-        } catch (error) {
-            console.error("Filter error:", error);
-            this.messageService.showError("Error applying filter. DirectQuery may have limitations.");
-        }
-    }
+            if (!filter) { this.messageService.showError("Filter couldn't be built"); return; }
 
-    /**
-     * Clears all date filters from Power BI (DirectQuery compatible)
-     */
+            const MERGE = (powerbi as any).FilterAction?.merge ?? 0; // 0 = merge
+            this.host.applyJsonFilter(filter, "general", "filter", MERGE);
+
+            this.messageService.showSuccess("Filter applied successfully!");
+        } catch (e) { /* eslint-disable no-console */ 
+            console.error(e); 
+            this.messageService.showError("Error applying filter."); }
+    }
     clearFilter(): void {
         try {
-            console.log("Clearing all filters to restore full data access");
-            
-            // Multiple approaches to ensure filter clearing works
-            let filterCleared = false;
 
-            // Method 1: Use filter manager for DirectQuery
-            if (this.host && this.host.filterManager && this.host.filterManager.clear) {
-                this.host.filterManager.clear();
-                filterCleared = true;
-                console.log("Filters cleared using filterManager.clear()");
-            }
+            const REMOVE = (powerbi as any).FilterAction?.remove ?? 1; // 1 = remove
+            this.host.applyJsonFilter(null, "general", "filter", REMOVE);
 
-            // Method 2: Remove JSON filters using applyJsonFilter with null
-            if (this.host && this.host.applyJsonFilter) {
-                // Clear both general and advanced filters
-                this.host.applyJsonFilter(null, "general", "filter", 1); // Remove general filters
-                this.host.applyJsonFilter(null, "advanced", "filter", 1); // Remove advanced filters
-                filterCleared = true;
-                console.log("Filters cleared using applyJsonFilter(null)");
-            }
-
-            // Method 3: Clear selection manager filters
-            if (this.host && this.host.createSelectionManager) {
-                const selectionManager = this.host.createSelectionManager();
-                if (selectionManager.clear) {
-                    selectionManager.clear();
-                    console.log("Selection manager cleared");
-                }
-            }
-
-            if (filterCleared) {
-                this.messageService.showSuccess("All filters cleared - showing full data");
-                console.log("All filters cleared successfully - full dataset should now be accessible");
-            } else {
-                this.messageService.showError("Unable to clear filters - API not available");
-                console.warn("No filter clearing methods were available");
-            }
-
-        } catch (error) {
-            console.error("Clear filter error:", error);
-            this.messageService.showError("Error clearing filters: " + error.message);
-        }
-    }
-
-    /**
-     * Creates a Power BI basic filter object for date range filtering
-     * @param dateRange - Date range to create filter for
-     * @returns Power BI filter object or null if no date column is set
-     */
-    private createBasicFilter(dateRange: IDateRange): any {
-        if (!this.dateColumn) return null;
-
-        // Use the exact queryName from the column metadata for proper targeting
-        const target = {
-            table: this.dateColumn.queryName?.split(".")[0] || "Table",
-            column: this.dateColumn.queryName?.split(".")[1] || this.dateColumn.displayName || "Date"
-        };
-
-        return {
-            $schema: "http://powerbi.com/product/schema#basic",
-            target: target,
-            operator: "And",
-            conditions: [
-                {
-                    operator: "GreaterThanOrEqual",
-                    value: DateUtils.formatDate(dateRange.startDate) + "T00:00:00.000Z"
-                },
-                {
-                    operator: "LessThanOrEqual",
-                    value: DateUtils.formatDate(dateRange.endDate) + "T23:59:59.999Z"
-                }
-            ]
-        };
-    }
-
-    /**
-     * Creates a Power BI advanced filter object for date range filtering (DirectQuery optimized)
-     * @param dateRange - Date range to create filter for
-     * @returns Power BI advanced filter object or null if no date column is set
-     */
-    private createAdvancedFilter(dateRange: IDateRange): any {
-        if (!this.dateColumn) return null;
-
-        // For DirectQuery, we need to be very specific about the target
-    const queryName = this.dateColumn.queryName || this.dateColumn.displayName;
-    const tableName = queryName.includes(".") ? queryName.split(".")[0] : "Table";
-    const columnName = queryName.includes(".") ? queryName.split(".")[1] : queryName;
-
-        // Create filter that works specifically with DirectQuery semantic models
-        return {
-            $schema: "http://powerbi.com/product/schema#advanced",
-            target: {
-                table: tableName,
-                column: columnName
-            },
-            logicalOperator: "And",
-            conditions: [
-                {
-                    operator: "GreaterThanOrEqual",
-                    value: this.formatDateForDirectQuery(dateRange.startDate, true)
-                },
-                {
-                    operator: "LessThanOrEqual",
-                    value: this.formatDateForDirectQuery(dateRange.endDate, false)
-                }
-            ],
-            filterType: 6 // Advanced filter type for DirectQuery
-        };
-    }
-
-    /**
-     * Formats dates specifically for DirectQuery compatibility
-     * @param date - Date to format
-     * @param isStartDate - Whether this is a start date (affects time component)
-     * @returns Formatted date string for DirectQuery
-     */
-    private formatDateForDirectQuery(date: Date, isStartDate: boolean): string {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, "0");
-        const day = String(date.getDate()).padStart(2, "0");
-        
-        // For DirectQuery, use proper ISO format without timezone confusion
-        if (isStartDate) {
-            return `${year}-${month}-${day}T00:00:00.000`;
-        } else {
-            return `${year}-${month}-${day}T23:59:59.999`;
-        }
+            this.messageService.showSuccess("All filters cleared - showing full data");
+        } catch (e) { /* eslint-disable no-console */ console.error(e); this.messageService.showError("Error clearing filters."); }
     }
 }
 
-/**
- * UI component for predefined date range selection buttons
- * Implements Single Responsibility Principle
- */
 class PredefinedRangesComponent implements IUIComponent {
-    private container: HTMLElement;
-    private onRangeSelected: (range: PredefinedRange) => void;
+    private container!: HTMLElement;
     private selectedRange: PredefinedRange = PredefinedRange.LATEST_7_DAYS;
-
-    /**
-     * Creates a new PredefinedRangesComponent instance
-     * @param onRangeSelected - Callback function when a range is selected
-     */
-    constructor(onRangeSelected: (range: PredefinedRange) => void) {
-        this.onRangeSelected = onRangeSelected;
-    }
-
-    /**
-     * Renders the predefined range buttons in the specified container
-     * @param container - HTML element to render the component in
-     */
+    constructor(private onRangeSelected: (r: PredefinedRange) => void) { }
     render(container: HTMLElement): void {
         this.container = container;
-        
-        const rangesContainer = document.createElement("div");
-        rangesContainer.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            margin-bottom: 12px;
-        `;
-
-        const title = document.createElement("div");
-        title.textContent = "Quick Select:";
-        title.style.cssText = `
-            font-size: 11px;
-            font-weight: 600;
-            color: #323130;
-            margin-bottom: 6px;
-        `;
-        rangesContainer.appendChild(title);
-
-        const buttonContainer = document.createElement("div");
-        buttonContainer.style.cssText = `
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-        `;
-
-        const ranges = [
+        const wrap = document.createElement("div"); wrap.style.cssText = "display:flex;flex-direction:column;gap:4px;margin-bottom:12px;";
+        const title = document.createElement("div"); title.textContent = "Quick Select:"; title.style.cssText = "font-size:11px;font-weight:600;color:#323130;margin-bottom:6px;"; wrap.appendChild(title);
+        const box = document.createElement("div"); box.style.cssText = "display:flex;gap:4px;flex-wrap:wrap;"; wrap.appendChild(box);
+        const defs = [
             { range: PredefinedRange.LATEST_7_DAYS, label: "Last 7 days" },
             { range: PredefinedRange.LATEST_30_DAYS, label: "Last 30 days" },
             { range: PredefinedRange.LATEST_90_DAYS, label: "Last 90 days" },
             { range: PredefinedRange.CUSTOM, label: "Custom" }
         ];
-
-        ranges.forEach(({ range, label }) => {
-            const button = document.createElement("button");
-            button.textContent = label;
-            button.style.cssText = `
-                padding: 4px 8px;
-                border: 1px solid ${range === this.selectedRange ? '#0078d4' : '#605e5c'};
-                background: ${range === this.selectedRange ? '#0078d4' : '#ffffff'};
-                color: ${range === this.selectedRange ? '#ffffff' : '#323130'};
-                border-radius: 2px;
-                font-size: 10px;
-                cursor: pointer;
-                flex: 1;
-                min-width: 60px;
-            `;
-            
-            button.onclick = () => {
-                this.selectedRange = range;
-                this.updateButtonStyles(buttonContainer, range);
-                this.onRangeSelected(range);
-            };
-            
-            buttonContainer.appendChild(button);
+        defs.forEach(({ range, label }) => {
+            const b = document.createElement("button"); b.textContent = label;
+            const sel = range === this.selectedRange;
+            b.style.cssText = `padding:4px 8px;border:1px solid ${sel ? "#0078d4" : "#605e5c"};background:${sel ? "#0078d4" : "#ffffff"};color:${sel ? "#ffffff" : "#323130"};border-radius:2px;font-size:10px;cursor:pointer;flex:1;min-width:60px;`;
+            b.onclick = () => { this.selectedRange = range; this.onRangeSelected(range); Array.from(box.querySelectorAll("button")).forEach(btn => { (btn as HTMLButtonElement).style.border = "1px solid #605e5c"; (btn as HTMLButtonElement).style.background = "#ffffff"; (btn as HTMLButtonElement).style.color = "#323130"; }); b.style.border = "1px solid #0078d4"; b.style.background = "#0078d4"; b.style.color = "#ffffff"; };
+            box.appendChild(b);
         });
-
-        rangesContainer.appendChild(buttonContainer);
-        container.appendChild(rangesContainer);
+        container.appendChild(wrap);
     }
-
-    /**
-     * Updates the component with new data (currently not used)
-     * @param data - Optional data for updates
-     */
-    update(data?: any): void {
-        // Update logic if needed
-    }
-
-    /**
-     * Updates button styling to reflect the selected range
-     * @param container - Container holding the buttons
-     * @param selectedRange - Currently selected range
-     */
-    private updateButtonStyles(container: HTMLElement, selectedRange: PredefinedRange): void {
-    const buttons = container.querySelectorAll("button");
-        const ranges = [
-            PredefinedRange.LATEST_7_DAYS,
-            PredefinedRange.LATEST_30_DAYS,
-            PredefinedRange.LATEST_90_DAYS,
-            PredefinedRange.CUSTOM
-        ];
-
-        buttons.forEach((button, index) => {
-            const isSelected = ranges[index] === selectedRange;
-            button.style.border = `1px solid ${isSelected ? '#0078d4' : '#605e5c'}`;
-            button.style.background = isSelected ? '#0078d4' : '#ffffff';
-            button.style.color = isSelected ? '#ffffff' : '#323130';
-        });
-    }
+    update(): void { }
 }
 
-/**
- * UI component for date input controls with validation
- * Implements Single Responsibility Principle
- */
 class DateInputsComponent implements IUIComponent {
-    private container: HTMLElement;
-    private startDateInput: HTMLInputElement;
-    private endDateInput: HTMLInputElement;
-    private onDateChange: (startDate: string, endDate: string) => void;
-    private minDate: Date | null = null;
-    private maxDate: Date | null = null;
-
-    /**
-     * Creates a new DateInputsComponent instance
-     * @param onDateChange - Callback function when dates change
-     */
-    constructor(onDateChange: (startDate: string, endDate: string) => void) {
-        this.onDateChange = onDateChange;
-    }
-
-    /**
-     * Renders the date input controls in the specified container
-     * @param container - HTML element to render the component in
-     */
+    private startDateInput!: HTMLInputElement; private endDateInput!: HTMLInputElement;
+    private minDate: Date | null = null; private maxDate: Date | null = null;
+    constructor(private onDateChange: (s: string, e: string) => void) { }
     render(container: HTMLElement): void {
-        this.container = container;
-        
-        const formContainer = document.createElement("div");
-        formContainer.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        `;
-
-        // Start date input
-        const startContainer = this.createDateInput("Start Date:", "startDate");
-        this.startDateInput = startContainer.querySelector('input') as HTMLInputElement;
-        this.startDateInput.addEventListener('change', () => this.handleDateChange());
-        formContainer.appendChild(startContainer);
-
-        // End date input
-        const endContainer = this.createDateInput("End Date:", "endDate");
-        this.endDateInput = endContainer.querySelector('input') as HTMLInputElement;
-        this.endDateInput.addEventListener('change', () => this.handleDateChange());
-        formContainer.appendChild(endContainer);
-
-        container.appendChild(formContainer);
+        const form = document.createElement("div"); form.style.cssText = "display:flex;flex-direction:column;gap:8px;";
+        const mk = (labelText: string, name: string) => {
+            const c = document.createElement("div");
+            const l = document.createElement("label"); l.textContent = labelText; l.style.cssText = "display:block;margin-bottom:3px;font-size:11px;font-weight:600;color:#323130;"; c.appendChild(l);
+            const i = document.createElement("input"); i.type = "date"; i.name = name; i.style.cssText = "width:100%;padding:6px 8px;border:1px solid #605e5c;border-radius:2px;font-size:12px;box-sizing:border-box;"; c.appendChild(i);
+            return { c, i };
+        };
+        const s = mk("Start Date:", "startDate"); this.startDateInput = s.i; this.startDateInput.addEventListener("change", () => this.onDateChange(this.startDateInput.value, this.endDateInput.value)); form.appendChild(s.c);
+        const e = mk("End Date:", "endDate"); this.endDateInput = e.i; this.endDateInput.addEventListener("change", () => this.onDateChange(this.startDateInput.value, this.endDateInput.value)); form.appendChild(e.c);
+        container.appendChild(form);
     }
-
-    /**
-     * Updates the component with new date constraints
-     * @param data - Object containing minDate and maxDate constraints
-     */
     update(data?: { minDate?: Date; maxDate?: Date }): void {
-        if (data) {
-            this.minDate = data.minDate || null;
-            this.maxDate = data.maxDate || null;
-            this.updateDateConstraints();
-        }
+        if (data) { this.minDate = data.minDate ?? null; this.maxDate = data.maxDate ?? null; this.applyConstraints(); }
     }
-
-    /**
-     * Sets the date range values in the input controls
-     * @param startDate - Start date to set
-     * @param endDate - End date to set
-     */
     setDateRange(startDate: Date, endDate: Date): void {
         this.startDateInput.value = DateUtils.formatDate(startDate);
         this.endDateInput.value = DateUtils.formatDate(endDate);
     }
-
-    /**
-     * Gets the current date range from the input controls
-     * @returns Current date range
-     */
-    getDateRange(): IDateRange {
-        return {
-            startDate: DateUtils.parseDate(this.startDateInput.value),
-            endDate: DateUtils.parseDate(this.endDateInput.value)
-        };
-    }
-
-    /**
-     * Creates a labeled date input element
-     * @param labelText - Text for the input label
-     * @param name - Name attribute for the input
-     * @returns Container element with label and input
-     */
-    private createDateInput(labelText: string, name: string): HTMLElement {
-        const container = document.createElement("div");
-        
-        const label = document.createElement("label");
-        label.textContent = labelText;
-        label.style.cssText = `
-            display: block;
-            margin-bottom: 3px;
-            font-size: 11px;
-            font-weight: 600;
-            color: #323130;
-        `;
-        container.appendChild(label);
-
-        const input = document.createElement("input");
-        input.type = "date";
-        input.name = name;
-        input.style.cssText = `
-            width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #605e5c;
-            border-radius: 2px;
-            font-size: 12px;
-            box-sizing: border-box;
-        `;
-        container.appendChild(input);
-
-        return container;
-    }
-
-    /**
-     * Updates date input constraints based on data min/max values
-     */
-    private updateDateConstraints(): void {
-        if (this.minDate) {
-            this.startDateInput.min = DateUtils.formatDate(this.minDate);
-            this.endDateInput.min = DateUtils.formatDate(this.minDate);
-        }
-        if (this.maxDate) {
-            this.startDateInput.max = DateUtils.formatDate(this.maxDate);
-            this.endDateInput.max = DateUtils.formatDate(this.maxDate);
-        }
-    }
-
-    /**
-     * Handles date input changes and notifies parent component
-     */
-    private handleDateChange(): void {
-        this.onDateChange(this.startDateInput.value, this.endDateInput.value);
+    getDateRange(): IDateRange { return { startDate: DateUtils.parseDate(this.startDateInput.value), endDate: DateUtils.parseDate(this.endDateInput.value) }; }
+    private applyConstraints(): void {
+        if (this.minDate) { const s = DateUtils.formatDate(this.minDate); this.startDateInput.min = s; this.endDateInput.min = s; }
+        if (this.maxDate) { const e = DateUtils.formatDate(this.maxDate); this.startDateInput.max = e; this.endDateInput.max = e; }
     }
 }
 
-/**
- * Main Power BI DateTime Picker Visual class
- * Implements Open/Closed Principle and coordinates all components and services
- * 
- * Features:
- * - Automatic min/max date detection from Power BI data
- * - Predefined date ranges (7, 30, 90 days) 
- * - Custom date range selection with validation
- * - Real-time filter application to Power BI reports
- * - Professional UI with responsive design
- * - SOLID architecture for maintainability
- */
-export class DateTimePickerVisual {
-    // UI Elements
-    private target: HTMLElement;
-    private host: any;
-    private container: HTMLDivElement;
-    private messageDiv: HTMLDivElement;
-    private fieldInfo: HTMLDivElement;
-    
-    // Services (Dependency Injection Principle)
-    private filterService: IFilterService;
-    private messageService: IMessageService;
-    
-    // Components
-    private predefinedRangesComponent: PredefinedRangesComponent;
-    private dateInputsComponent: DateInputsComponent;
-    
-    // Data
-    private dateColumn: IDateColumnInfo | null = null;
-    private currentRange: PredefinedRange = PredefinedRange.LATEST_7_DAYS;
+export class DateTimePickerVisual implements IVisual {
+    private host: any; private target: HTMLElement;
+    private container!: HTMLDivElement; private messageDiv!: HTMLDivElement; private fieldInfo!: HTMLDivElement;
+    private messageService!: IMessageService; private filterService!: IFilterService;
+    private predefinedRangesComponent!: PredefinedRangesComponent; private dateInputsComponent!: DateInputsComponent;
+    private dateColumn: IDateColumnInfo | null = null; private currentRange: PredefinedRange = PredefinedRange.LATEST_7_DAYS;
 
-    /**
-     * Creates a new DateTimePickerVisual instance
-     * @param options - Power BI visual constructor options
-     */
-    constructor(options: any) {
-        console.log("DateTimePicker Visual constructor called");
-        console.log("Host:", options.host);
-        console.log("Element:", options.element);
-        this.host = options.host;
-        this.target = options.element;
-        this.initializeServices();
-        this.initializeComponents();
-        this.createUI();
-    }
+    constructor(options: VisualConstructorOptions) {
+        this.host = options.host; this.target = options.element;
 
-    /**
-     * Initializes all required services following Dependency Injection principle
-     */
-    private initializeServices(): void {
-        // Create message div first (will be created in createUI)
-        this.messageDiv = document.createElement("div");
-        this.messageService = new MessageService(this.messageDiv);
-        this.filterService = new FilterService(this.host, this.messageService);
-    }
-
-    /**
-     * Initializes UI components with proper callbacks
-     */
-    private initializeComponents(): void {
-        this.predefinedRangesComponent = new PredefinedRangesComponent(
-            (range: PredefinedRange) => this.handleRangeSelection(range)
-        );
-        
-        this.dateInputsComponent = new DateInputsComponent(
-            (startDate: string, endDate: string) => this.handleDateChange(startDate, endDate)
-        );
-    }
-
-    /**
-     * Creates the main UI structure and renders all components
-     */
-    private createUI(): void {
-        // Main container
         this.container = document.createElement("div");
-        this.container.style.cssText = `
-            padding: 15px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #ffffff;
-            border: 1px solid #d1d1d1;
-            border-radius: 6px;
-            height: 100%;
-            box-sizing: border-box;
-            overflow: auto;
-        `;
+        this.container.style.cssText = "padding:15px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#fff;border:1px solid #d1d1d1;border-radius:6px;height:100%;box-sizing:border-box;overflow:auto;";
         this.target.appendChild(this.container);
 
-        // Title
-        this.createTitle();
-        
-        // Field info
-        this.createFieldInfo();
-        
-        // Predefined ranges
-        this.predefinedRangesComponent.render(this.container);
-        
-        // Date inputs
-        this.dateInputsComponent.render(this.container);
-        
-        // Action buttons
-        this.createActionButtons();
-        
-        // Message area
-        this.createMessageArea();
+        const title = document.createElement("h3"); title.textContent = "Date Range Filter"; title.style.cssText = "margin:0 0 12px 0;color:#323130;font-size:14px;font-weight:600;padding-bottom:8px;border-bottom:1px solid #edebe9;"; this.container.appendChild(title);
 
-        // Set initial state
-        this.initializeDefaultState();
+        this.fieldInfo = document.createElement("div");
+        this.fieldInfo.style.cssText = "margin-bottom:12px;padding:6px 10px;background:#fff4ce;border:1px solid #ffb900;border-radius:3px;font-size:11px;color:#8a8886;";
+        this.fieldInfo.textContent = "Add a date field to the Fields area";
+        this.container.appendChild(this.fieldInfo);
+
+        this.messageDiv = document.createElement("div"); this.messageService = new MessageService(this.messageDiv);
+        this.filterService = new FilterService(this.host, this.messageService);
+
+        this.predefinedRangesComponent = new PredefinedRangesComponent((r) => this.handleRangeSelection(r)); this.predefinedRangesComponent.render(this.container);
+        this.dateInputsComponent = new DateInputsComponent((s, e) => this.handleDateChange(s, e)); this.dateInputsComponent.render(this.container);
+
+        const btnBox = document.createElement("div"); btnBox.style.cssText = "display:flex;gap:6px;margin:12px 0;";
+        const applyBtn = document.createElement("button"); applyBtn.textContent = "Apply Filter"; applyBtn.style.cssText = "flex:1;padding:8px 12px;background:#0078d4;color:white;border:none;border-radius:2px;font-size:12px;font-weight:600;cursor:pointer;"; applyBtn.onclick = () => this.applyFilter(); btnBox.appendChild(applyBtn);
+        const clearBtn = document.createElement("button"); clearBtn.textContent = "Show All Data"; clearBtn.style.cssText = "flex:1;padding:8px 12px;background:#8a8886;color:white;border:none;border-radius:2px;font-size:12px;font-weight:600;cursor:pointer;"; clearBtn.onclick = () => this.clearFilter(); btnBox.appendChild(clearBtn);
+        this.container.appendChild(btnBox);
+
+        this.messageDiv.style.cssText = "margin-top:8px;padding:6px 10px;border-radius:3px;font-size:11px;display:none;"; this.container.appendChild(this.messageDiv);
     }
 
-    /**
-     * Creates the visual title element
-     */
-    private createTitle(): void {
-        const title = document.createElement("h3");
-        title.textContent = "Date Range Filter";
-        title.style.cssText = `
-            margin: 0 0 12px 0;
-            color: #323130;
-            font-size: 14px;
-            font-weight: 600;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #edebe9;
-        `;
-    this.container.appendChild(title);
-    }
-
-    /**
-     * Creates the field information display element
-     */
-    private createFieldInfo(): void {
-    this.fieldInfo = document.createElement("div");
-        this.fieldInfo.style.cssText = `
-            margin-bottom: 12px;
-            padding: 6px 10px;
-            background: #fff4ce;
-            border: 1px solid #ffb900;
-            border-radius: 3px;
-            font-size: 11px;
-            color: #8a8886;
-        `;
-    this.fieldInfo.textContent = "Add a date field to the Fields area";
-    this.container.appendChild(this.fieldInfo);
-    }
-
-    /**
-     * Creates the action buttons (Apply Filter, Clear Filter)
-     */
-    private createActionButtons(): void {
-    const buttonContainer = document.createElement("div");
-        buttonContainer.style.cssText = `
-            display: flex;
-            gap: 6px;
-            margin: 12px 0;
-        `;
-
-        // Apply button
-    const applyButton = document.createElement("button");
-    applyButton.textContent = "Apply Filter";
-        applyButton.style.cssText = `
-            flex: 1;
-            padding: 8px 12px;
-            background: #0078d4;
-            color: white;
-            border: none;
-            border-radius: 2px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        `;
-    applyButton.onmouseover = () => applyButton.style.background = "#106ebe";
-    applyButton.onmouseout = () => applyButton.style.background = "#0078d4";
-    applyButton.onclick = () => this.applyFilter();
-    buttonContainer.appendChild(applyButton);
-
-        // Clear button
-    const clearButton = document.createElement("button");
-    clearButton.textContent = "Show All Data";
-        clearButton.style.cssText = `
-            flex: 1;
-            padding: 8px 12px;
-            background: #8a8886;
-            color: white;
-            border: none;
-            border-radius: 2px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        `;
-    clearButton.onmouseover = () => clearButton.style.background = "#6d6a67";
-    clearButton.onmouseout = () => clearButton.style.background = "#8a8886";
-    clearButton.onclick = () => this.clearFilter();
-    buttonContainer.appendChild(clearButton);
-
-    this.container.appendChild(buttonContainer);
-    }
-
-    /**
-     * Creates the message area for user feedback
-     */
-    private createMessageArea(): void {
-        this.messageDiv.style.cssText = `
-            margin-top: 8px;
-            padding: 6px 10px;
-            border-radius: 3px;
-            font-size: 11px;
-            display: none;
-            transition: all 0.3s ease;
-        `;
-    this.container.appendChild(this.messageDiv);
-    }
-
-    /**
-     * Sets the initial state of the visual (defaults to last 7 days)
-     */
-    private initializeDefaultState(): void {
-    // Don't set default range here - wait for data to load
-    // The range will be set in updateDataColumnInfo after data is processed
-    console.log("Initial state setup - waiting for data to determine range");
-    }
-
-    /**
-     * Handles predefined range selection events
-     * @param range - Selected predefined range
-     */
-    private handleRangeSelection(range: PredefinedRange): void {
-        this.currentRange = range;
-        
-        if (range !== PredefinedRange.CUSTOM) {
-            // For DirectQuery, use current date to calculate ranges since dataView is limited
-            // This ensures we get the most recent data when selecting "last N days"
-            const today = new Date();
-            const dateRange = DateUtils.getDateRange(range, today);
-            this.dateInputsComponent.setDateRange(dateRange.startDate, dateRange.endDate);
-            
-            // Log for debugging
-            console.log(`Range selected: ${range} days from current date (${DateUtils.formatDate(today)})`);
-            console.log(`Calculated range: ${DateUtils.formatDate(dateRange.startDate)} to ${DateUtils.formatDate(dateRange.endDate)}`);
-            console.log("Using current date to avoid dataView limitations in DirectQuery");
-        }
-    }
-
-    /**
-     * Handles date input change events and validates the range
-     * @param startDate - Start date string from input
-     * @param endDate - End date string from input
-     */
-    private handleDateChange(startDate: string, endDate: string): void {
-        if (startDate && endDate) {
-            const start = DateUtils.parseDate(startDate);
-            const end = DateUtils.parseDate(endDate);
-            
-            if (!DateUtils.isValidDateRange(start, end)) {
-                this.messageService.showError("Start date must be before end date");
-            }
-        }
-    }
-
-    /**
-     * Applies the current date range as a filter to Power BI
-     */
-    private applyFilter(): void {
-        const dateRange = this.dateInputsComponent.getDateRange();
-        
-        if (!dateRange.startDate || !dateRange.endDate) {
-            this.messageService.showError("Please select both start and end dates");
-            return;
-        }
-
-        if (!DateUtils.isValidDateRange(dateRange.startDate, dateRange.endDate)) {
-            this.messageService.showError("Start date must be before end date");
-            return;
-        }
-        console.log(`Range selected: ${dateRange} from inputs`);
-        this.filterService.applyFilter(dateRange);
-    }
-
-    /**
-     * Clears all date filters from Power BI
-     */
-    private clearFilter(): void {
-        this.filterService.clearFilter();
-    }
-
-    /**
-     * Power BI visual update method - called when data or viewport changes
-     * @param options - Power BI update options containing data and viewport info
-     */
-    public update(options: any): void {
-        console.log("DateTimePicker Visual update called", options);
-        
-        // Update viewport
-        if (options.viewport) {
-            this.container.style.width = options.viewport.width + "px";
-            this.container.style.height = options.viewport.height + "px";
-        }
-
-        // Update field information and extract min/max dates
+    public update(options: VisualUpdateOptions): void {
+        if (options?.viewport) { this.container.style.width = options.viewport.width + "px"; this.container.style.height = options.viewport.height + "px"; }
         this.updateDataColumnInfo(options);
     }
 
-    /**
-     * Updates data column information and extracts min/max dates from Power BI data
-     * @param options - Power BI update options containing dataViews
-     */
-    private updateDataColumnInfo(options: any): void {
-        if (options.dataViews && options.dataViews[0]) {
-            const dataView = options.dataViews[0];
-            
-            // Look for date column in categorical data
-            if (dataView.categorical && dataView.categorical.categories && dataView.categorical.categories.length > 0) {
-                const categoryData = dataView.categorical.categories[0];
-                this.dateColumn = {
-                    displayName: categoryData.source.displayName || "Unknown Field",
-                    queryName: categoryData.source.queryName || "",
-                };
+    private handleRangeSelection(range: PredefinedRange): void {
+        this.currentRange = range;
+        let startDate: Date, endDate: Date;
+        if (range !== PredefinedRange.CUSTOM) {
+            const maxRef = this.dateColumn?.maxDate || new Date();
+            const r = DateUtils.getDateRange(range, maxRef);
+            this.dateInputsComponent.setDateRange(r.startDate, r.endDate);
+            startDate = r.startDate; endDate = r.endDate;
+        } else {
+            const r = this.dateInputsComponent.getDateRange(); startDate = r.startDate; endDate = r.endDate;
+        }
+        this.updateFieldInfoLabel(startDate, endDate);
+    }
 
-                // Detect min/max from actual data
-                let minDate = null;
-                let maxDate = null;
-                if (categoryData.values && categoryData.values.length > 0) {
-                    const minMax = DateUtils.findMinMaxDates(categoryData.values);
-                    minDate = minMax.minDate;
-                    maxDate = minMax.maxDate;
-                }
-                // Fallback if no valid dates found
-                if (!minDate) minDate = new Date(1900, 0, 1);
-                if (!maxDate) maxDate = new Date(new Date().getFullYear() + 10, 11, 31);
-                this.dateColumn.minDate = minDate;
-                this.dateColumn.maxDate = maxDate;
-
-                // Log the detected range
-                console.log(`Detected date range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`);
-
-                // Update date input constraints with the detected range
-                this.dateInputsComponent.update({ 
-                    minDate: this.dateColumn.minDate, 
-                    maxDate: this.dateColumn.maxDate 
-                });
-
-                // Initialize with last 7 days from current date
-                setTimeout(() => {
-                    this.handleRangeSelection(PredefinedRange.LATEST_7_DAYS);
-                    console.log("Initialized with last 7 days from current date");
-                }, 100);
-
-                // Update filter service
-                this.filterService.setDateColumn(this.dateColumn);
-
-                // Update UI to show the detected range
-                this.fieldInfo.textContent = `Connected to: ${this.dateColumn.displayName}`;
-                this.fieldInfo.textContent += ` - Range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`;
-                this.fieldInfo.style.background = "#dff6dd";
-                this.fieldInfo.style.borderColor = "#107c10";
-                this.fieldInfo.style.color = "#107c10";
-            } else {
-                this.dateColumn = null;
-                this.filterService.setDateColumn(null);
-                this.fieldInfo.textContent = "Add a date field to the Fields area";
-                this.fieldInfo.style.background = "#fff4ce";
-                this.fieldInfo.style.borderColor = "#ffb900";
-                this.fieldInfo.style.color = "#8a8886";
-            }
+    private handleDateChange(start: string, end: string): void {
+        if (start && end) {
+            const s = DateUtils.parseDate(start); const e = DateUtils.parseDate(end);
+            if (!DateUtils.isValidDateRange(s, e)) this.messageService.showError("Start date must be before end date");
+            this.updateFieldInfoLabel(s, e);
         }
     }
 
-    /**
-     * Power BI visual method for enumerating object instances (properties panel)
-     * @param options - Enumeration options
-     * @returns Array of visual property instances
-     */
-    public enumerateObjectInstances(options?: any): any[] {
-        return [];
+    private updateFieldInfoLabel(startDate?: Date, endDate?: Date): void {
+        if (this.dateColumn) {
+            let label = `Connected to: ${this.dateColumn.displayName}`;
+            if (startDate && endDate) label += ` | Selected: ${DateUtils.formatDate(startDate)} to ${DateUtils.formatDate(endDate)}`;
+            else if (this.dateColumn.minDate && this.dateColumn.maxDate) label += ` | Range: ${DateUtils.formatDate(this.dateColumn.minDate)} to ${DateUtils.formatDate(this.dateColumn.maxDate)}`;
+            this.fieldInfo.textContent = label;
+            this.fieldInfo.style.background = "#dff6dd"; this.fieldInfo.style.borderColor = "#107c10"; this.fieldInfo.style.color = "#107c10";
+        } else {
+            this.fieldInfo.textContent = "Add a date field to the Fields area";
+            this.fieldInfo.style.background = "#fff4ce"; this.fieldInfo.style.borderColor = "#ffb900"; this.fieldInfo.style.color = "#8a8886";
+        }
+    }
+
+    private applyFilter(): void {
+        const r = this.dateInputsComponent.getDateRange();
+        if (!r.startDate || !r.endDate) { this.messageService.showError("Please select both start and end dates"); return; }
+        if (!DateUtils.isValidDateRange(r.startDate, r.endDate)) { this.messageService.showError("Start date must be before end date"); return; }
+        this.filterService.applyFilter(r);
+    }
+
+    private clearFilter(): void { this.filterService.clearFilter(); }
+
+    private updateDataColumnInfo(options: VisualUpdateOptions): void {
+        const dv: any = (options as any)?.dataViews?.[0];
+        const cats: any[] | undefined = dv?.categorical?.categories as any[] | undefined;
+        const metaCols: any[] = dv?.metadata?.columns || [];
+
+        const pickMetaDateCol = () => metaCols.find(c =>
+            (c?.roles && (c.roles["date"] || c.roles["category"])) && (c?.type?.dateTime || c?.type?.date)
+        ) || metaCols.find(c => (c?.type?.dateTime || c?.type?.date));
+
+        if (cats && cats.length) {
+            const cat = cats.find(c => (c?.source?.roles && (c.source.roles["date"] || c.source.roles["category"])) ||
+                (c?.source?.type && (c.source.type.dateTime || c.source.type.date))) || cats[0];
+            this.dateColumn = { displayName: cat.source.displayName || "Date", queryName: cat.source.queryName || "" };
+            const mm = DateUtils.findMinMaxDates(cat.values || []);
+            this.dateColumn.minDate = mm.minDate || new Date(1900, 0, 1);
+            this.dateColumn.maxDate = mm.maxDate || new Date(new Date().getFullYear() + 10, 11, 31);
+        } else {
+            const metaDate = pickMetaDateCol();
+            if (metaDate) {
+                this.dateColumn = { displayName: metaDate.displayName || "Date", queryName: metaDate.queryName || "" };
+                // try to compute min/max from table rows
+                let minDate: Date | null = null, maxDate: Date | null = null;
+                const t = dv?.table;
+                if (t?.rows && Array.isArray(t.rows) && metaCols.length) {
+                    const idx = metaCols.indexOf(metaDate);
+                    if (idx >= 0) {
+                        const vals = t.rows.map((r: any[]) => r[idx]);
+                        const mm = DateUtils.findMinMaxDates(vals);
+                        minDate = mm.minDate; maxDate = mm.maxDate;
+                    }
+                }
+                this.dateColumn.minDate = minDate || new Date(1900, 0, 1);
+                this.dateColumn.maxDate = maxDate || new Date(new Date().getFullYear() + 10, 11, 31);
+            } else {
+                this.dateColumn = null;
+            }
+        }
+
+        if (this.dateColumn) {
+            this.dateInputsComponent.update({ minDate: this.dateColumn.minDate, maxDate: this.dateColumn.maxDate });
+            const initial = DateUtils.getDateRange(PredefinedRange.LATEST_7_DAYS, this.dateColumn.maxDate);
+            this.dateInputsComponent.setDateRange(initial.startDate, initial.endDate);
+            this.filterService.setDateColumn(this.dateColumn);
+            this.updateFieldInfoLabel();
+        } else {
+            this.filterService.setDateColumn(null);
+            this.updateFieldInfoLabel();
+        }
     }
 }
+
+export default DateTimePickerVisual;
