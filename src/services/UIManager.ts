@@ -55,8 +55,10 @@ export class UIManager implements IUIManager {
      */
     public createUI(): void {
         try {
-            // Clear existing content
-            this.container.innerHTML = '';
+            // Clear existing content safely
+            while (this.container.firstChild) {
+                this.container.removeChild(this.container.firstChild);
+            }
             this.container.className = 'date-slicer-container';
 
             // Create main layout
@@ -84,12 +86,24 @@ export class UIManager implements IUIManager {
             const endDateStr = this.dateRangeCalculator.formatDate(dateRange.endDate);
             const rangeTypeStr = this.dateRangeCalculator.getRangeTypeDisplayText(dateRange.type);
 
-            this.dateRangeDisplay.innerHTML = `
-                <div class="range-info">
-                    <span class="range-type">${rangeTypeStr}</span>
-                    <span class="date-range">${startDateStr} - ${endDateStr}</span>
-                </div>
-            `;
+            // Clear existing content
+            this.dateRangeDisplay.textContent = '';
+
+            // Create elements safely
+            const rangeInfo = document.createElement('div');
+            rangeInfo.className = 'range-info';
+
+            const rangeType = document.createElement('span');
+            rangeType.className = 'range-type';
+            rangeType.textContent = rangeTypeStr;
+
+            const dateRangeSpan = document.createElement('span');
+            dateRangeSpan.className = 'date-range';
+            dateRangeSpan.textContent = `${startDateStr} - ${endDateStr}`;
+
+            rangeInfo.appendChild(rangeType);
+            rangeInfo.appendChild(dateRangeSpan);
+            this.dateRangeDisplay.appendChild(rangeInfo);
 
             this.debugLogger.logInfo(`Updated date range display: ${startDateStr} to ${endDateStr}`);
         } catch (error) {
@@ -109,12 +123,31 @@ export class UIManager implements IUIManager {
             if (show) {
                 this.debugPanel.style.display = 'block';
                 const logs = debugInfo || this.debugLogger.getLogs();
-                this.debugPanel.innerHTML = `
-                    <div class="debug-header">Debug Information</div>
-                    <div class="debug-content">
-                        ${logs.map(log => `<div class="debug-line">${log}</div>`).join('')}
-                    </div>
-                `;
+                
+                // Clear existing content safely
+                while (this.debugPanel.firstChild) {
+                    this.debugPanel.removeChild(this.debugPanel.firstChild);
+                }
+
+                // Create debug header
+                const debugHeader = document.createElement('div');
+                debugHeader.className = 'debug-header';
+                debugHeader.textContent = 'Debug Information';
+
+                // Create debug content container
+                const debugContent = document.createElement('div');
+                debugContent.className = 'debug-content';
+
+                // Add log entries
+                logs.forEach(log => {
+                    const debugLine = document.createElement('div');
+                    debugLine.className = 'debug-line';
+                    debugLine.textContent = log;
+                    debugContent.appendChild(debugLine);
+                });
+
+                this.debugPanel.appendChild(debugHeader);
+                this.debugPanel.appendChild(debugContent);
             } else {
                 this.debugPanel.style.display = 'none';
             }
@@ -384,13 +417,20 @@ export class UIManager implements IUIManager {
         this.rangeSelector = document.createElement('select');
         this.rangeSelector.className = 'range-selector';
         
-        // Add options
-        this.rangeSelector.innerHTML = `
-            <option value="${DateRangeType.Last7Days}">Last 7 Days</option>
-            <option value="${DateRangeType.Last30Days}">Last 30 Days</option>
-            <option value="${DateRangeType.Last90Days}">Last 90 Days</option>
-            <option value="${DateRangeType.Custom}">Custom Range</option>
-        `;
+        // Add options safely
+        const options = [
+            { value: DateRangeType.Last7Days, text: 'Last 7 Days' },
+            { value: DateRangeType.Last30Days, text: 'Last 30 Days' },
+            { value: DateRangeType.Last90Days, text: 'Last 90 Days' },
+            { value: DateRangeType.Custom, text: 'Custom Range' }
+        ];
+
+        options.forEach(optionData => {
+            const option = document.createElement('option');
+            option.value = optionData.value;
+            option.textContent = optionData.text;
+            this.rangeSelector.appendChild(option);
+        });
 
         controlGroup.appendChild(label);
         controlGroup.appendChild(this.rangeSelector);

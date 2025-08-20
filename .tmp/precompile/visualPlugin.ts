@@ -5,9 +5,9 @@ import VisualConstructorOptions = powerbiVisualsApi.extensibility.visual.VisualC
 import DialogConstructorOptions = powerbiVisualsApi.extensibility.visual.DialogConstructorOptions;
 var powerbiKey: any = "powerbi";
 var powerbi: any = window[powerbiKey];
-var mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG: IVisualPlugin = {
-    name: 'mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG',
-    displayName: 'MDCDateTimePicker',
+var DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C: IVisualPlugin = {
+    name: 'DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C',
+    displayName: 'Date Range Slicer',
     class: 'Visual',
     apiVersion: '5.3.0',
     create: (options?: VisualConstructorOptions) => {
@@ -27,6 +27,6 @@ var mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG: IVisualPlugin = {
 if (typeof powerbi !== "undefined") {
     powerbi.visuals = powerbi.visuals || {};
     powerbi.visuals.plugins = powerbi.visuals.plugins || {};
-    powerbi.visuals.plugins["mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG"] = mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG;
+    powerbi.visuals.plugins["DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C"] = DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C;
 }
-export default mDCDateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C_DEBUG;
+export default DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C;

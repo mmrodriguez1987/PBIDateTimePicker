@@ -1,0 +1,17 @@
+{
+		"version": "1.0.0.0",
+		"author": {"name":"Manuel Rodriguez","email":"mmrodriguez1987@example.com"},
+		"resources": [
+			{
+				"resourceId": "rId0",
+				"sourceType": 5,
+				"file": "resources/DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C.pbiviz.json"
+			}
+		],
+		"visual": {"name":"DateTimePicker","displayName":"Date Range Slicer","guid":"DateTimePicker7C1D2202FB0B4C51A0E6FA961EBF229C","visualClassName":"Visual","version":"1.0.0.0","description":"A comprehensive date range slicer for Power BI with predefined ranges (Last 7/30/90 days) and custom date selection capabilities. Features clean responsive UI, debug mode, and configurable styling.","supportUrl":"https://github.com/mmrodriguez1987/PBIDateTimePicker","gitHubUrl":"https://github.com/mmrodriguez1987/PBIDateTimePicker"},
+		"metadata": {
+			"pbivizjson": {
+				"resourceId": "rId0"
+			}
+		}
+	}
